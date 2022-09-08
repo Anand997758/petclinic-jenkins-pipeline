@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    stages {
+        stage('checkout') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Anand997758/spring-framework-petclinic.git']]])
+            }
+        }
+        stage('package build') {
+            steps {
+                sh '/opt/maven/bin/mvn clean package'
+            }
+        }
+        stage('artifactory') {
+            steps {
+                sh 'aws s3 cp target/petclinic.war s3://pet-clinic-anand/'
+            }
+        }
+        stage('jenkins') {
+            steps {
+                sh 'aws s3 cp s3://pet-clinic-anand/ .'
+            }
+        }
+        stage('deploy') {
+            steps {
+                sh 'scp -r target/petclinic.war root@172.31.31.119:/opt/tomcat/webapps/'
+            }
+        }
+        
+    }
+}
